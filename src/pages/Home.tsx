@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Download, BookOpen, CheckCircle2, Zap, Monitor, ChevronRight, Star, Send, Bug, MessageCircle } from 'lucide-react'
+import { Download, BookOpen, CheckCircle2, Zap, Monitor, ChevronRight, Star, Send, Bug, MessageCircle, Loader2 } from 'lucide-react'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import WindowFrame from '../components/WindowFrame'
@@ -91,17 +91,49 @@ export default function Home() {
   const [fbEmail, setFbEmail] = useState('')
   const [fbCategory, setFbCategory] = useState('Bug Report')
   const [fbMessage, setFbMessage] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [fbSent, setFbSent] = useState(false)
+  const [fbError, setFbError] = useState<string | null>(null)
 
-  const handleFeedbackSubmit = (e: React.FormEvent) => {
+  const handleFeedbackSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const subject = encodeURIComponent(`[RoboLab Studio] ${fbCategory}${fbName ? ' — ' + fbName : ''}`)
-    const body = encodeURIComponent(
-      `Category: ${fbCategory}\nName: ${fbName || '(anonymous)'}\nReply-to: ${fbEmail || '(not provided)'}\n\n${fbMessage}`
-    )
-    window.open(`mailto:hamilulquranizayn@gmail.com?subject=${subject}&body=${body}`, '_blank')
-    setFbSent(true)
-    setTimeout(() => setFbSent(false), 5000)
+    if (!fbMessage.trim()) return
+
+    setIsSubmitting(true)
+    setFbError(null)
+
+    try {
+      const response = await fetch('https://formsubmit.co/ajax/hamilulquranizayn@gmail.com', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          _subject: `[RoboLab Studio] ${fbCategory}: ${fbName || 'Pengguna'}`,
+          Kategori: fbCategory,
+          Nama: fbName || '(Anonim)',
+          Email_Pengirim: fbEmail || '(Tidak disertakan)',
+          Pesan: fbMessage,
+          _template: 'table',
+          _captcha: 'false',
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Gagal mengirim pesan. Silakan coba lagi.')
+      }
+
+      setFbSent(true)
+      setFbName('')
+      setFbEmail('')
+      setFbMessage('')
+    } catch (err: any) {
+      console.error('Feedback submit error:', err)
+      setFbError(err?.message || 'Terjadi kesalahan saat mengirim. Silakan coba lagi.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -275,19 +307,25 @@ export default function Home() {
                   <div className="w-14 h-14 rounded-full bg-green-50 border border-green-100 flex items-center justify-center">
                     <CheckCircle2 size={28} className="text-green-500" />
                   </div>
-                  <h3 className="font-display font-bold text-lg text-[#0F172A]">Terima kasih!</h3>
-                  <p className="text-slate-500 text-sm max-w-xs">
-                    Email client Anda sudah dibuka. Pastikan email berhasil terkirim ke tim kami.
+                  <h3 className="font-display font-bold text-lg text-[#0F172A]">Pesan Berhasil Terkirim!</h3>
+                  <p className="text-slate-500 text-sm max-w-xs leading-relaxed">
+                    Terima kasih atas masukan Anda. Laporan atau saran Anda telah langsung terkirim ke tim kami dan akan segera ditinjau.
                   </p>
                   <button
                     onClick={() => setFbSent(false)}
-                    className="mt-2 text-xs font-semibold text-[#1557B0] hover:underline"
+                    className="mt-2 text-xs font-semibold text-[#1557B0] hover:underline cursor-pointer"
                   >
                     Kirim masukan lain
                   </button>
                 </div>
               ) : (
                 <form onSubmit={handleFeedbackSubmit} className="space-y-4 sm:space-y-5">
+                  {fbError && (
+                    <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs leading-relaxed">
+                      {fbError}
+                    </div>
+                  )}
+
                   <div className="grid sm:grid-cols-2 gap-4">
                     {/* Name */}
                     <div>
@@ -326,7 +364,7 @@ export default function Home() {
                           key={cat}
                           type="button"
                           onClick={() => setFbCategory(cat)}
-                          className={`px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+                          className={`px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
                             fbCategory === cat
                               ? 'bg-[#1557B0] text-white border-[#1557B0] shadow-sm'
                               : 'bg-white text-slate-600 border-slate-200 hover:border-[#1557B0] hover:text-[#1557B0]'
@@ -357,16 +395,24 @@ export default function Home() {
                   {/* Submit */}
                   <div className="flex items-center justify-between gap-4 pt-1">
                     <p className="text-[11px] text-slate-400 leading-snug">
-                      Pesan akan dikirim ke{' '}
-                      <span className="font-medium text-slate-500">hamilulquranizayn@gmail.com</span>{' '}
-                      via email client Anda.
+                      Pesan akan langsung terkirim secara instan ke tim pengembang RoboLab Studio.
                     </p>
                     <button
                       type="submit"
-                      className="btn-primary text-sm py-2.5 px-5 flex-shrink-0"
+                      disabled={isSubmitting}
+                      className="btn-primary text-sm py-2.5 px-5 flex-shrink-0 flex items-center gap-2 disabled:opacity-60 cursor-pointer"
                     >
-                      <Send size={14} />
-                      Kirim
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 size={14} className="animate-spin" />
+                          Mengirim...
+                        </>
+                      ) : (
+                        <>
+                          <Send size={14} />
+                          Kirim Masukan
+                        </>
+                      )}
                     </button>
                   </div>
                 </form>
