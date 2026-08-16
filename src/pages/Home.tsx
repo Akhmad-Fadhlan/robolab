@@ -1,6 +1,6 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Download, BookOpen, CheckCircle2, Zap, Monitor, ChevronRight, Star } from 'lucide-react'
+import { Download, BookOpen, CheckCircle2, Zap, Monitor, ChevronRight, Star, Send, Bug, MessageCircle } from 'lucide-react'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import WindowFrame from '../components/WindowFrame'
@@ -85,6 +85,24 @@ export default function Home() {
   useEffect(() => {
     document.title = 'RoboLab Studio — All-in-One IDE for IoT & Robotics Education'
   }, [])
+
+  // Feedback form state
+  const [fbName, setFbName] = useState('')
+  const [fbEmail, setFbEmail] = useState('')
+  const [fbCategory, setFbCategory] = useState('Bug Report')
+  const [fbMessage, setFbMessage] = useState('')
+  const [fbSent, setFbSent] = useState(false)
+
+  const handleFeedbackSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    const subject = encodeURIComponent(`[RoboLab Studio] ${fbCategory}${fbName ? ' — ' + fbName : ''}`)
+    const body = encodeURIComponent(
+      `Category: ${fbCategory}\nName: ${fbName || '(anonymous)'}\nReply-to: ${fbEmail || '(not provided)'}\n\n${fbMessage}`
+    )
+    window.open(`mailto:hamilulquranizayn@gmail.com?subject=${subject}&body=${body}`, '_blank')
+    setFbSent(true)
+    setTimeout(() => setFbSent(false), 5000)
+  }
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
@@ -228,6 +246,132 @@ export default function Home() {
               Lihat Semua Fitur
               <ChevronRight size={16} />
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Feedback / Bug Report ────────────────────────────────────────── */}
+      <section className="py-14 sm:py-20 bg-white border-t border-slate-100">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-8 lg:px-16">
+          <div className="max-w-2xl mx-auto">
+            {/* Header */}
+            <div className="text-center mb-8 sm:mb-10">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-50 border border-rose-100 text-rose-600 text-xs font-semibold mb-4">
+                <MessageCircle size={12} />
+                Feedback &amp; Bug Report
+              </div>
+              <h2 className="font-display font-extrabold text-[clamp(1.5rem,3vw,2.2rem)] text-[#0F172A] leading-tight mb-3">
+                Found a bug? Have a suggestion?
+              </h2>
+              <p className="text-slate-500 text-sm sm:text-base leading-relaxed">
+                Kami sangat menghargai masukan Anda. Kirimkan laporan bug atau saran fitur langsung ke tim kami.
+              </p>
+            </div>
+
+            {/* Form card */}
+            <div className="rounded-2xl border border-slate-100 bg-[#F8FAFC] p-6 sm:p-8 shadow-sm">
+              {fbSent ? (
+                <div className="py-10 flex flex-col items-center text-center gap-3">
+                  <div className="w-14 h-14 rounded-full bg-green-50 border border-green-100 flex items-center justify-center">
+                    <CheckCircle2 size={28} className="text-green-500" />
+                  </div>
+                  <h3 className="font-display font-bold text-lg text-[#0F172A]">Terima kasih!</h3>
+                  <p className="text-slate-500 text-sm max-w-xs">
+                    Email client Anda sudah dibuka. Pastikan email berhasil terkirim ke tim kami.
+                  </p>
+                  <button
+                    onClick={() => setFbSent(false)}
+                    className="mt-2 text-xs font-semibold text-[#1557B0] hover:underline"
+                  >
+                    Kirim masukan lain
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleFeedbackSubmit} className="space-y-4 sm:space-y-5">
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    {/* Name */}
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-600 mb-1.5">
+                        Nama <span className="text-slate-400 font-normal">(opsional)</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={fbName}
+                        onChange={e => setFbName(e.target.value)}
+                        placeholder="Nama Anda"
+                        className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition"
+                      />
+                    </div>
+                    {/* Email */}
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-600 mb-1.5">
+                        Email balasan <span className="text-slate-400 font-normal">(opsional)</span>
+                      </label>
+                      <input
+                        type="email"
+                        value={fbEmail}
+                        onChange={e => setFbEmail(e.target.value)}
+                        placeholder="email@contoh.com"
+                        className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Category */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1.5">Kategori</label>
+                    <div className="flex flex-wrap gap-2">
+                      {['Bug Report', 'Saran Fitur', 'Pertanyaan', 'Lainnya'].map(cat => (
+                        <button
+                          key={cat}
+                          type="button"
+                          onClick={() => setFbCategory(cat)}
+                          className={`px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+                            fbCategory === cat
+                              ? 'bg-[#1557B0] text-white border-[#1557B0] shadow-sm'
+                              : 'bg-white text-slate-600 border-slate-200 hover:border-[#1557B0] hover:text-[#1557B0]'
+                          }`}
+                        >
+                          {cat === 'Bug Report' && <Bug size={11} className="inline mr-1 -mt-px" />}
+                          {cat}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Message */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1.5">
+                      Pesan <span className="text-rose-500">*</span>
+                    </label>
+                    <textarea
+                      required
+                      rows={5}
+                      value={fbMessage}
+                      onChange={e => setFbMessage(e.target.value)}
+                      placeholder="Jelaskan bug yang ditemukan atau saran yang ingin Anda sampaikan..."
+                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition resize-none"
+                    />
+                  </div>
+
+                  {/* Submit */}
+                  <div className="flex items-center justify-between gap-4 pt-1">
+                    <p className="text-[11px] text-slate-400 leading-snug">
+                      Pesan akan dikirim ke{' '}
+                      <span className="font-medium text-slate-500">hamilulquranizayn@gmail.com</span>{' '}
+                      via email client Anda.
+                    </p>
+                    <button
+                      type="submit"
+                      className="btn-primary text-sm py-2.5 px-5 flex-shrink-0"
+                    >
+                      <Send size={14} />
+                      Kirim
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
           </div>
         </div>
       </section>
